@@ -1,0 +1,132 @@
+.sidebar-container {
+    width: 260px;
+    height: 100vh;
+    background: #343a40; /* Dark background for the sidebar */
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    color: #f8f9fa; /* Light text color to match your pages */
+    font-family: 'Arial', sans-serif;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.profile-pic {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 3px solid #17a2b8; /* Accent border color */
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #17a2b8; /* Accent color for the name */
+}
+
+.profile-role {
+    font-size: 0.9em;
+    color: #b0b0b0;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.15); /* Transparent background with slight color */
+    padding: 10px 15px;
+    border-radius: 25px;
+    margin-bottom: 15px;
+    backdrop-filter: blur(5px);
+    transition: background-color 0.3s ease;
+}
+
+.search-box:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.search-box input {
+    border: none;
+    background: none;
+    flex-grow: 1;
+    outline: none;
+    color: #f8f9fa;
+    font-size: 1em;
+    padding-left: 10px;
+    transition: width 0.3s ease, color 0.3s ease;
+}
+
+.search-box input::placeholder {
+    color: #b0b0b0; /* Placeholder color */
+}
+
+.search-box input:focus {
+    width: 100%;
+    color: #17a2b8;
+}
+
+.search-box .search-icon {
+    color: #b0b0b0;
+    font-size: 1.2em;
+    margin-right: 10px;
+}
+
+.chat-list {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 12px;
+    transition: background 0.3s ease;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    margin-bottom: 8px;
+}
+
+.chat-item:hover {
+    background: rgba(23, 162, 184, 0.2); /* Hover effect with the accent color */
+}
+
+.chat-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 3px solid #f8f9fa;
+}
+
+.chat-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.chat-name {
+    font-weight: bold;
+    color: #f8f9fa;
+}
+
+.chat-message {
+    font-size: 0.8em;
+    color: #b0b0b0;
+}
+
+.chat-time {
+    font-size: 0.7em;
+    color: #7f7f7f;
+}
