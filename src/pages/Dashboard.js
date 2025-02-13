@@ -3,6 +3,8 @@ import { db, auth } from "../firebase";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/header";
 import { push, ref, set, onValue, remove } from "firebase/database";
+import { supabase } from "../supabase";
+import Attachment from "../assets/images/attachment.png";
 
 const Dashboard = () => {
   const [messages, setMessages] = useState([]);
@@ -10,8 +12,15 @@ const Dashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [editMessageId, setEditMessageId] = useState(null);
+  const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
+  const [file, setFile] = useState("");
 
+  console.log(file);
   const dropdownRef = useRef(null);
+
+  const toggleAttachmentDropdown = () => {
+    setShowAttachmentDropdown(!showAttachmentDropdown);
+  };
 
   useEffect(() => {
     if (!selectedUser) return;
@@ -33,32 +42,91 @@ const Dashboard = () => {
     });
   }, [selectedUser]);
 
-  const sendMessage = () => {
+  // const sendMessage = () => {
+  //   const trimmedMessage = newMessage.trim();
+  //   if (!trimmedMessage) return;
+
+  //   const currentUser = auth.currentUser.displayName;
+  //   const usersPath = [currentUser, selectedUser].sort().join("-");
+
+  //   if (editMessageId) {
+  //     const messageRef = ref(db, `messages/${usersPath}/${editMessageId}`);
+  //     set(messageRef, {
+  //       message: trimmedMessage,
+  //       sender: currentUser,
+  //       timestamp: new Date().toISOString(),
+  //     }).then(() => {
+  //       setNewMessage("");
+  //       setEditMessageId(null);
+  //     });
+  //   } else {
+  //     const messagesRef = ref(db, `messages/${usersPath}`);
+  //     const newMessageRef = push(messagesRef);
+
+  //     set(newMessageRef, {
+  //       message: trimmedMessage,
+  //       sender: currentUser,
+  //       timestamp: new Date().toISOString(),
+  //     }).then(() => setNewMessage(""));
+  //   }
+  // };
+
+  const sendMessage = async () => {
     const trimmedMessage = newMessage.trim();
-    if (!trimmedMessage) return;
+    if (!trimmedMessage && !file) return;
 
     const currentUser = auth.currentUser.displayName;
     const usersPath = [currentUser, selectedUser].sort().join("-");
+    const messagesRef = ref(db, `messages/${usersPath}`);
+    let imageUrl = null;
+
+    if (file) {
+      imageUrl = await uploadFileToSupabase(file);
+      setFile("");
+    }
 
     if (editMessageId) {
       const messageRef = ref(db, `messages/${usersPath}/${editMessageId}`);
       set(messageRef, {
-        message: trimmedMessage,
+        message: trimmedMessage || "",
         sender: currentUser,
         timestamp: new Date().toISOString(),
+        image: imageUrl || null,
       }).then(() => {
         setNewMessage("");
         setEditMessageId(null);
       });
     } else {
-      const messagesRef = ref(db, `messages/${usersPath}`);
       const newMessageRef = push(messagesRef);
 
       set(newMessageRef, {
         message: trimmedMessage,
         sender: currentUser,
         timestamp: new Date().toISOString(),
+        image: imageUrl || null,
       }).then(() => setNewMessage(""));
+    }
+  };
+
+  const uploadFileToSupabase = async (file) => {
+    try {
+      if (!file) return null;
+
+      const filePath = `Images/${file.name}`;
+
+      await supabase.storage.from("chat-app-storage").upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+      const { data: publicUrlData } = supabase.storage
+        .from("chat-app-storage")
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    } catch (err) {
+      console.error("Upload Error:", err);
+      return null;
     }
   };
 
@@ -85,6 +153,25 @@ const Dashboard = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowAttachmentDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFile(file);
+    }
+  };
 
   return (
     <div className="d-flex vh-100" style={{ backgroundColor: "#f1f3f5" }}>
@@ -116,7 +203,24 @@ const Dashboard = () => {
                   onClick={() => setSelectedMessage(msg.id)}
                   style={{ cursor: "pointer" }}
                 >
-                  <span>{msg.message}</span>
+                  {/* <span>{msg.message}</span> */}
+
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    {msg.image && (
+                      <img
+                        src={msg.image}
+                        alt="Sent file"
+                        style={{
+                          maxWidth: "150px",
+                          marginBottom: "5px",
+                          borderBottom:"1px solid",
+                          paddingBottom:"5px"
+                        }}
+                      />
+                    )}
+                    {msg.message && <span style={{color : msg.sender === auth.currentUser.displayName ? "#ffffff" : "3333333"}}>{msg.message}</span>}
+                  </div>
+
                   <div
                     style={{
                       fontSize: "0.8em",
@@ -188,21 +292,46 @@ const Dashboard = () => {
 
         {selectedUser && (
           <div className="p-3 border-top bg-white d-flex">
-            <input
-              type="text"
-              className="form-control me-2"
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              style={{ borderRadius: "50px", paddingLeft: "20px" }}
-            />
-            <button
-              className="btn btn-primary"
-              onClick={sendMessage}
-              style={{ borderRadius: "50px", padding: "10px 20px" }}
-            >
-              {editMessageId ? "Update" : "Send"}
-            </button>
+            <div style={{ width: "90%", position: "relative" }}>
+              <input
+                type="text"
+                className="form-control me-2"
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                style={{ borderRadius: "50px", paddingLeft: "20px" }}
+              />
+              <span className="attachment" onClick={toggleAttachmentDropdown}>
+                <img src={Attachment} alt="Attachment Icon" />
+              </span>
+              {showAttachmentDropdown && (
+                <div className="attachment-dropdown" ref={dropdownRef}>
+                  <input
+                    type="file"
+                    id="Imagefile"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    onClick={() => document.getElementById("Imagefile").click()}
+                  >
+                    📷 Upload Image
+                  </button>
+                  {/* <button>🎥 Upload Video</button>
+                  <button>📄 Upload Document</button> */}
+                </div>
+              )}
+            </div>
+            <div style={{ width: "10%", textAlign: "end" }}>
+              <button
+                className="btn btn-primary"
+                onClick={sendMessage}
+                style={{ borderRadius: "50px", padding: "10px 20px" }}
+              >
+                {editMessageId ? "Update" : file ? "Click to Send" : "Send"}
+              </button>
+            </div>
           </div>
         )}
       </div>
