@@ -93,7 +93,6 @@ const Header = ({ setSelectedUser, selectedUser }) => {
           New Chat
         </button>
         <div className="settings-dropdown">
-        <p style={{color:"#ffffff"}}>checking for vercel changes</p>
           <button
             className="settings-button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
