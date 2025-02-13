@@ -97,7 +97,7 @@ const Header = ({ setSelectedUser, selectedUser }) => {
             className="settings-button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
-            Settings 
+            Settings
           </button>
           {isDropdownOpen && (
             <div className="dropdown-content">

@@ -13,9 +13,9 @@ const Dashboard = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [editMessageId, setEditMessageId] = useState(null);
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
-  const [file, setFile] = useState("");
+  const [mediaFile, setMediaFile] = useState("");
 
-  console.log(file);
+  console.log(mediaFile);
   const dropdownRef = useRef(null);
 
   const toggleAttachmentDropdown = () => {
@@ -42,47 +42,18 @@ const Dashboard = () => {
     });
   }, [selectedUser]);
 
-  // const sendMessage = () => {
-  //   const trimmedMessage = newMessage.trim();
-  //   if (!trimmedMessage) return;
-
-  //   const currentUser = auth.currentUser.displayName;
-  //   const usersPath = [currentUser, selectedUser].sort().join("-");
-
-  //   if (editMessageId) {
-  //     const messageRef = ref(db, `messages/${usersPath}/${editMessageId}`);
-  //     set(messageRef, {
-  //       message: trimmedMessage,
-  //       sender: currentUser,
-  //       timestamp: new Date().toISOString(),
-  //     }).then(() => {
-  //       setNewMessage("");
-  //       setEditMessageId(null);
-  //     });
-  //   } else {
-  //     const messagesRef = ref(db, `messages/${usersPath}`);
-  //     const newMessageRef = push(messagesRef);
-
-  //     set(newMessageRef, {
-  //       message: trimmedMessage,
-  //       sender: currentUser,
-  //       timestamp: new Date().toISOString(),
-  //     }).then(() => setNewMessage(""));
-  //   }
-  // };
-
   const sendMessage = async () => {
     const trimmedMessage = newMessage.trim();
-    if (!trimmedMessage && !file) return;
+    if (!trimmedMessage && !mediaFile) return;
 
     const currentUser = auth.currentUser.displayName;
     const usersPath = [currentUser, selectedUser].sort().join("-");
     const messagesRef = ref(db, `messages/${usersPath}`);
-    let imageUrl = null;
+    let mediaUrl = null;
 
-    if (file) {
-      imageUrl = await uploadFileToSupabase(file);
-      setFile("");
+    if (mediaFile) {
+      mediaUrl = await uploadInSupabase(mediaFile);
+      setMediaFile("");
     }
 
     if (editMessageId) {
@@ -91,7 +62,7 @@ const Dashboard = () => {
         message: trimmedMessage || "",
         sender: currentUser,
         timestamp: new Date().toISOString(),
-        image: imageUrl || null,
+        media: mediaUrl || null,
       }).then(() => {
         setNewMessage("");
         setEditMessageId(null);
@@ -103,20 +74,21 @@ const Dashboard = () => {
         message: trimmedMessage,
         sender: currentUser,
         timestamp: new Date().toISOString(),
-        image: imageUrl || null,
+        media: mediaUrl || null,
       }).then(() => setNewMessage(""));
     }
   };
 
-  const uploadFileToSupabase = async (file) => {
+  const uploadInSupabase = async (file) => {
     try {
       if (!file) return null;
 
-      const filePath = `Images/${file.name}`;
+      // const filePath = `Images/${file.name}`;
+      const filePath = `Media/${file.name}`;
 
       await supabase.storage.from("chat-app-storage").upload(filePath, file, {
         cacheControl: "3600",
-        upsert: false,
+        upsert: true,
       });
 
       const { data: publicUrlData } = supabase.storage
@@ -169,9 +141,11 @@ const Dashboard = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFile(file);
+      setMediaFile(file);
     }
   };
+
+  console.log("messages :", messages);
 
   return (
     <div className="d-flex vh-100" style={{ backgroundColor: "#f1f3f5" }}>
@@ -205,20 +179,56 @@ const Dashboard = () => {
                 >
                   {/* <span>{msg.message}</span> */}
 
-                  <div style={{display:"flex", flexDirection:"column"}}>
-                    {msg.image && (
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {/* {msg.image && (
                       <img
                         src={msg.image}
                         alt="Sent file"
                         style={{
                           maxWidth: "150px",
                           marginBottom: "5px",
-                          borderBottom:"1px solid",
-                          paddingBottom:"5px"
+                          borderBottom: "1px solid",
+                          paddingBottom: "5px",
                         }}
                       />
+                    )} */}
+
+                    {msg.media && msg.media.endsWith(".mp4") ? (
+                      <video
+                        controls
+                        src={msg.media}
+                        style={{
+                          maxWidth: "150px",
+                          marginBottom: "5px",
+                          borderBottom: "1px solid",
+                          paddingBottom: "5px",
+                        }}
+                      />
+                    ) : msg.media ? (
+                      <img
+                        src={msg.media}
+                        alt="Sent file"
+                        style={{
+                          maxWidth: "150px",
+                          marginBottom: "5px",
+                          borderBottom: "1px solid",
+                          paddingBottom: "5px",
+                        }}
+                      />
+                    ) : null}
+
+                    {msg.message && (
+                      <span
+                        style={{
+                          color:
+                            msg.sender === auth.currentUser.displayName
+                              ? "#ffffff"
+                              : "3333333",
+                        }}
+                      >
+                        {msg.message}
+                      </span>
                     )}
-                    {msg.message && <span style={{color : msg.sender === auth.currentUser.displayName ? "#ffffff" : "3333333"}}>{msg.message}</span>}
                   </div>
 
                   <div
@@ -309,17 +319,29 @@ const Dashboard = () => {
                   <input
                     type="file"
                     id="Imagefile"
-                    accept="image/*"
+                    // accept="image/*"
+                    accept="image/*, video/*"
                     style={{ display: "none" }}
                     onChange={handleFileChange}
                   />
+                  {/* <input
+                    type="file"
+                    id="videoFile"
+                    accept="video/*"
+                    style={{ display: "none" }}
+                    onChange={handleVideoFileChange}
+                  /> */}
                   <button
                     onClick={() => document.getElementById("Imagefile").click()}
                   >
-                    📷 Upload Image
+                    📷 Upload Media
                   </button>
-                  {/* <button>🎥 Upload Video</button>
-                  <button>📄 Upload Document</button> */}
+                  {/* <button
+                    onClick={() => document.getElementById("videoFile").click()}
+                  >
+                    🎥 Upload Video
+                  </button> */}
+                  {/*<button>📄 Upload Document</button> */}
                 </div>
               )}
             </div>
@@ -329,7 +351,11 @@ const Dashboard = () => {
                 onClick={sendMessage}
                 style={{ borderRadius: "50px", padding: "10px 20px" }}
               >
-                {editMessageId ? "Update" : file ? "Click to Send" : "Send"}
+                {editMessageId
+                  ? "Update"
+                  : mediaFile
+                  ? "Click to Send"
+                  : "Send"}
               </button>
             </div>
           </div>
