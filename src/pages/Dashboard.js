@@ -62,13 +62,14 @@ const Dashboard = () => {
     if (editMessageId) {
       const messageRef = ref(db, `messages/${usersPath}/${editMessageId}`);
       set(messageRef, {
-        message: trimmedMessage || "",
+        message: trimmedMessage,
         sender: currentUser,
         timestamp: new Date().toISOString(),
         media: mediaUrl || null,
       }).then(() => {
         setNewMessage("");
         setEditMessageId(null);
+        setIsLoading(false);
       });
     } else {
       const newMessageRef = push(messagesRef);
@@ -78,17 +79,17 @@ const Dashboard = () => {
         sender: currentUser,
         timestamp: new Date().toISOString(),
         media: mediaUrl || null,
-      }).then(() => setNewMessage(""));
+      }).then(() => {
+        setNewMessage("");
+        setIsLoading(false);
+      });
     }
-
-    setIsLoading(false);
   };
 
   const uploadInSupabase = async (file) => {
     try {
       if (!file) return null;
 
-      // const filePath = `Images/${file.name}`;
       const filePath = `Media/${file.name}`;
 
       await supabase.storage.from("chat-app-storage").upload(filePath, file, {
@@ -150,8 +151,6 @@ const Dashboard = () => {
     }
   };
 
-  console.log("messages :", messages);
-
   return (
     <div className="d-flex vh-100" style={{ backgroundColor: "#f1f3f5" }}>
       <Sidebar setSelectedUser={setSelectedUser} />
@@ -183,29 +182,55 @@ const Dashboard = () => {
                   style={{ cursor: "pointer" }}
                 >
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    {msg.media && msg.media.endsWith(".mp4") ? (
-                      <video
-                        controls
-                        src={msg.media}
-                        style={{
-                          maxWidth: "150px",
-                          marginBottom: "5px",
-                          borderBottom: "1px solid",
-                          paddingBottom: "5px",
-                        }}
-                      />
-                    ) : msg.media ? (
-                      <img
-                        src={msg.media}
-                        alt="Sent file"
-                        style={{
-                          maxWidth: "150px",
-                          marginBottom: "5px",
-                          borderBottom: "1px solid",
-                          paddingBottom: "5px",
-                        }}
-                      />
-                    ) : null}
+                    {msg.media &&
+                      (() => {
+                        const isImage = msg.media.match(
+                          /\.(jpg|jpeg|png|gif)$/i
+                        );
+                        const isVideo = msg.media.endsWith(".mp4");
+                        const isDocument = msg.media.match(
+                          /\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i
+                        );
+
+                        if (isVideo) {
+                          return (
+                            <video
+                              controls
+                              src={msg.media}
+                              style={{ maxWidth: "150px" }}
+                            />
+                          );
+                        } else if (isImage) {
+                          return (
+                            <img
+                              src={msg.media}
+                              alt="Sent file"
+                              style={{ maxWidth: "150px" }}
+                            />
+                          );
+                        } else if (isDocument) {
+                          return (
+                            <a
+                              href={msg.media}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="document-link"
+                            >
+                              <div className="document-container">
+                                <div className="document-icon">📄</div>
+                                <div className="document-info">
+                                  <span className="document-name">
+                                    {msg.media.split("/").pop().split("?")[0]}
+                                  </span>
+                                  <span className="document-text">
+                                    Click to view
+                                  </span>
+                                </div>
+                              </div>
+                            </a>
+                          );
+                        }
+                      })()}
 
                     {msg.message && (
                       <span
@@ -240,8 +265,10 @@ const Dashboard = () => {
                           className="dropdown-item"
                           onClick={() => deleteMessage(msg.id)}
                         >
-                          Delete
+                          Delete For Both
                         </button>
+
+                        <button className="dropdown-item">Delete For Me</button>
 
                         <button
                           className="dropdown-item"
@@ -313,13 +340,13 @@ const Dashboard = () => {
                     style={{ display: "none" }}
                     onChange={handleFileChange}
                   />
-                  {/* <input
+                  <input
                     type="file"
-                    id="videoFile"
-                    accept="video/*"
+                    id="documentInput"
+                    accept=".pdf, .doc, .docx, .txt"
                     style={{ display: "none" }}
-                    onChange={handleVideoFileChange}
-                  /> */}
+                    onChange={handleFileChange}
+                  />
                   <button
                     onClick={() => document.getElementById("Imagefile").click()}
                   >
@@ -330,7 +357,13 @@ const Dashboard = () => {
                   >
                     🎥 Upload Video
                   </button> */}
-                  {/*<button>📄 Upload Document</button> */}
+                  <button
+                    onClick={() =>
+                      document.getElementById("documentInput").click()
+                    }
+                  >
+                    📄 Upload Document
+                  </button>
                 </div>
               )}
             </div>
@@ -342,7 +375,7 @@ const Dashboard = () => {
                 disabled={isLoading}
               >
                 {isLoading
-                  ? "Loading..."
+                  ? "Sending..."
                   : editMessageId
                   ? "Update"
                   : mediaFile

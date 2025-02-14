@@ -268,12 +268,14 @@
   display: flex;
   gap: 15px;
 }
-.attachment{
+
+.attachment {
   position: absolute;
   right: 20px;
   top: 10%;
 }
-.attachment img{
+
+.attachment img {
   width: 20px;
   height: 20px;
 }
@@ -334,4 +336,45 @@
 
 .attachment-dropdown button:hover {
   background: #f1f1f1;
+}
+
+.document-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+  transition: 0.3s ease-in-out;
+  width: fit-content;
+}
+
+.document-link:hover {
+  background: #eef;
+}
+
+.document-container {
+  display: flex;
+  align-items: center;
+}
+
+.document-icon {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.document-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.document-name {
+  font-weight: bold;
+  color: #333;
+}
+
+.document-text {
+  font-size: 12px;
+  color: #555;
 }
