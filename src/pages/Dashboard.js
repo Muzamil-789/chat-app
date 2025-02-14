@@ -14,6 +14,7 @@ const Dashboard = () => {
   const [editMessageId, setEditMessageId] = useState(null);
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
   const [mediaFile, setMediaFile] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   console.log(mediaFile);
   const dropdownRef = useRef(null);
@@ -46,6 +47,8 @@ const Dashboard = () => {
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage && !mediaFile) return;
 
+    setIsLoading(true);
+
     const currentUser = auth.currentUser.displayName;
     const usersPath = [currentUser, selectedUser].sort().join("-");
     const messagesRef = ref(db, `messages/${usersPath}`);
@@ -77,6 +80,8 @@ const Dashboard = () => {
         media: mediaUrl || null,
       }).then(() => setNewMessage(""));
     }
+
+    setIsLoading(false);
   };
 
   const uploadInSupabase = async (file) => {
@@ -177,22 +182,7 @@ const Dashboard = () => {
                   onClick={() => setSelectedMessage(msg.id)}
                   style={{ cursor: "pointer" }}
                 >
-                  {/* <span>{msg.message}</span> */}
-
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    {/* {msg.image && (
-                      <img
-                        src={msg.image}
-                        alt="Sent file"
-                        style={{
-                          maxWidth: "150px",
-                          marginBottom: "5px",
-                          borderBottom: "1px solid",
-                          paddingBottom: "5px",
-                        }}
-                      />
-                    )} */}
-
                     {msg.media && msg.media.endsWith(".mp4") ? (
                       <video
                         controls
@@ -319,7 +309,6 @@ const Dashboard = () => {
                   <input
                     type="file"
                     id="Imagefile"
-                    // accept="image/*"
                     accept="image/*, video/*"
                     style={{ display: "none" }}
                     onChange={handleFileChange}
@@ -350,11 +339,14 @@ const Dashboard = () => {
                 className="btn btn-primary"
                 onClick={sendMessage}
                 style={{ borderRadius: "50px", padding: "10px 20px" }}
+                disabled={isLoading}
               >
-                {editMessageId
+                {isLoading
+                  ? "Loading..."
+                  : editMessageId
                   ? "Update"
                   : mediaFile
-                  ? "Click to Send"
+                  ? "Send Media"
                   : "Send"}
               </button>
             </div>
